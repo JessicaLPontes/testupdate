@@ -3,19 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Excel para SQL {Insert}</title>
+    <title>Excel para SQL {Insert & Update}</title>
     <link rel="icon" href="https://github.com/JessicaLPontes/Convert/blob/main/logo.png?raw=true" type="image/png">
     <link rel="stylesheet" href="styles.css"> <!-- Adiciona o arquivo CSS externo -->
 </head>
 <body>
 
+    <!-- Logo -->
     <img id="logo" src="https://github.com/JessicaLPontes/Convert/blob/main/logo.png?raw=true" alt="Logo">
-    <h1>Excel para SQL {Insert}</h1>
+    <h1>Excel para SQL {Insert & Update}</h1>
 
-    <input id="file-input" type="file" onchange="handleFiles(event)" multiple accept=".xlsx, .xls">
-    <button id="clear-button" onclick="clearFiles()">Limpar Dados</button>
-    <div id="sql-links"></div>
+    <!-- Seção de entrada de arquivo -->
+    <div id="file-input-container">
+        <label for="file-input" class="file-label">Escolha seus arquivos Excel:</label>
+        <input id="file-input" type="file" onchange="handleFiles(event)" multiple accept=".xlsx, .xls">
+        <button id="clear-button" onclick="clearFiles()">Limpar Dados</button>
+    </div>
 
+    <!-- Links para downloads -->
+    <div id="sql-links">
+        <!-- Os links para download dos arquivos serão gerados aqui -->
+    </div>
+
+    <!-- Scripts -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.4/xlsx.full.min.js"></script>
     <script src="script.js"></script>
 </body>
