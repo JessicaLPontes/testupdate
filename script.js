@@ -8,9 +8,6 @@ function handleFiles(event) {
     processingMsg.innerText = 'Processando arquivos...';
     sqlLinksContainer.appendChild(processingMsg);
 
-    // Inicia a animação
-    processingMsg.classList.add('processing');
-
     for (let i = 0; i < files.length; i++) {
         const file = files[i];
         const reader = new FileReader();
@@ -26,9 +23,8 @@ function handleFiles(event) {
                     const jsonData = XLSX.utils.sheet_to_json(sheet, { raw: false });
                     const columns = Object.keys(jsonData[0]);
 
-                    // Gera comandos SQL com suporte a INSERT + UPDATE
-                    const insertOrUpdateSQL = jsonData.map(row => {
-                        // Gera valores para o INSERT
+                    // Bloco de comandos INSERT
+                    const insertSQL = jsonData.map(row => {
                         const values = columns.map(column => {
                             let value = row[column];
                             if (value === '' || typeof value === 'undefined') {
@@ -39,8 +35,11 @@ function handleFiles(event) {
                                 return typeof cleanedValue === 'string' ? `'${cleanedValue.replace(/'/g, "''")}'` : `'${cleanedValue}'`;
                             }
                         }).join(', ');
+                        return `INSERT INTO ${tableName} (${columns.join(', ')}) VALUES (${values});`;
+                    }).join('\n');
 
-                        // Gera SET para o UPDATE
+                    // Bloco de comandos UPDATE
+                    const updateSQL = jsonData.map(row => {
                         const updateStatements = columns.map(column => {
                             let value = row[column];
                             if (value === '' || typeof value === 'undefined') {
@@ -52,18 +51,32 @@ function handleFiles(event) {
                             }
                         }).join(', ');
 
-                        // Comando INSERT + UPDATE
-                        return `INSERT INTO ${tableName} (${columns.join(', ')}) VALUES (${values}) ON DUPLICATE KEY UPDATE ${updateStatements};`;
+                        // Supõe que a primeira coluna é a chave de identificação
+                        const primaryKeyColumn = columns[0];
+                        const primaryKeyValue = row[primaryKeyColumn];
+                        const cleanedPrimaryKey = primaryKeyValue
+                            ? `'${primaryKeyValue.toString().replace(/'/g, "''")}'`
+                            : 'NULL';
+
+                        return `UPDATE ${tableName} SET ${updateStatements} WHERE ${primaryKeyColumn} = ${cleanedPrimaryKey};`;
                     }).join('\n');
 
-                    // Cria arquivo SQL
-                    const blob = new Blob([insertOrUpdateSQL], { type: 'text/plain' });
-                    const link = document.createElement('a');
-                    link.href = window.URL.createObjectURL(blob);
-                    link.download = `${tableName}_insert_update.sql`;
-                    link.innerText = `Download ${tableName}_insert_update.sql`;
-                    link.classList.add('sql-link');
-                    sqlLinksContainer.appendChild(link);
+                    // Cria arquivos SQL separados
+                    const insertBlob = new Blob([insertSQL], { type: 'text/plain' });
+                    const insertLink = document.createElement('a');
+                    insertLink.href = window.URL.createObjectURL(insertBlob);
+                    insertLink.download = `${tableName}_insert.sql`;
+                    insertLink.innerText = `Download ${tableName}_insert.sql`;
+                    insertLink.classList.add('sql-link');
+                    sqlLinksContainer.appendChild(insertLink);
+
+                    const updateBlob = new Blob([updateSQL], { type: 'text/plain' });
+                    const updateLink = document.createElement('a');
+                    updateLink.href = window.URL.createObjectURL(updateBlob);
+                    updateLink.download = `${tableName}_update.sql`;
+                    updateLink.innerText = `Download ${tableName}_update.sql`;
+                    updateLink.classList.add('sql-link');
+                    sqlLinksContainer.appendChild(updateLink);
                 });
 
                 // Remove a animação após o processamento
