@@ -9,66 +9,57 @@ body {
     justify-content: center;
     min-height: 100vh;
 }
-
 #logo {
-    width: 150px;
-    height: auto;
-    margin-bottom: 20px;
+    width: 150px; /* Ajusta o tamanho da imagem conforme necessário */
+    height: auto; /* Mantém a proporção */
+    margin-bottom: 20px; /* Espaço abaixo da imagem */
 }
-
-h1 {
-    margin: 0;
-    color: #f5f5ae;
-    text-align: center;
-    margin-bottom: 20px;
-}
-
-.file-button {
-    padding: 15px 20px;
+#file-input {
+    padding: 15px 15px;
     font-size: 18px;
     border: outset;
-    background-color: #6c757d;
-    color: #ffffff;
+    background-color: #6c757d; /* Medium dark gray */
+    color: #ffffff; /* White */
     cursor: pointer;
     outline: none;
     transition: background-color 0.3s ease;
     text-align: center;
-    margin: 10px;
+    margin-bottom: 20px; /* Espaço abaixo do input */
 }
-
-.file-button:hover {
-    background-color: #495057;
+#file-input:hover {
+    background-color: #495057; /* Darker gray on hover */
 }
-
-.file-button:active {
-    background-color: #343a40;
+#file-input:active {
+    background-color: #343a40; /* Background color on click */
 }
-
+h1 {
+    margin: 0;
+    color: #f5f5ae; /* Header text color */
+    text-align: center;
+    margin-bottom: 20px; /* Espaço abaixo do título */
+}
+.sql-link {
+    display: block;
+    margin-top: 20px;
+    text-decoration: none;
+    color: #ffffff; /* Link text color */
+    font-weight: bold;
+}
+.sql-link:hover {
+    color: #ced4da; /* Lighter text color on hover */
+}
 #clear-button {
     margin-top: 20px;
     padding: 10px 20px;
-    background-color: #6e70fa; /* Blue */
+    background-color: #6e70fa; /* blue */
     border: outset;
-    color: #ffffff;
+    color: #ffffff; /* White */
     cursor: pointer;
     outline: none;
     border-radius: 5px;
 }
-
 #clear-button:hover {
-    background-color: #373afa; /* Clear blue on hover */
-}
-
-.sql-link {
-    display: block;
-    margin-top: 10px;
-    text-decoration: none;
-    color: #ffffff;
-    font-weight: bold;
-}
-
-.sql-link:hover {
-    color: #ced4da;
+    background-color: #373afa; /* clear blue on hover */
 }
 
 .processing {
