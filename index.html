@@ -5,26 +5,24 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Excel para SQL {Insert & Update}</title>
     <link rel="icon" href="https://github.com/JessicaLPontes/Convert/blob/main/logo.png?raw=true" type="image/png">
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles.css"> <!-- Adiciona o arquivo CSS externo -->
 </head>
 <body>
 
-    <!-- Logo e título -->
+    <!-- Logo -->
     <img id="logo" src="https://github.com/JessicaLPontes/Convert/blob/main/logo.png?raw=true" alt="Logo">
     <h1>Excel para SQL {Insert & Update}</h1>
 
-    <!-- Botões separados para INSERT e UPDATE -->
-    <input id="insert-input" type="file" style="display:none;" onchange="handleInsertFiles(event)" multiple accept=".xlsx, .xls">
-    <button class="file-button" onclick="document.getElementById('insert-input').click()">Carregar para INSERT</button>
+    <!-- Seção de entrada de arquivo -->
+    <div id="file-input-container">
+        <input id="file-input" type="file" onchange="handleFiles(event)" multiple accept=".xlsx, .xls">
+        <button id="clear-button" onclick="clearFiles()">Limpar Dados</button>
+    </div>
 
-    <input id="update-input" type="file" style="display:none;" onchange="handleUpdateFiles(event)" multiple accept=".xlsx, .xls">
-    <button class="file-button" onclick="document.getElementById('update-input').click()">Carregar para UPDATE</button>
-
-    <!-- Botão de limpar -->
-    <button id="clear-button" onclick="clearFiles()">Limpar Dados</button>
-
-    <!-- Links para os arquivos SQL gerados -->
-    <div id="sql-links"></div>
+    <!-- Links para downloads -->
+    <div id="sql-links">
+        <!-- Os links para download dos arquivos serão gerados aqui -->
+    </div>
 
     <!-- Scripts -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.4/xlsx.full.min.js"></script>
