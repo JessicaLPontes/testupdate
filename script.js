@@ -1,18 +1,26 @@
-function handleFiles(event) {
+function handleInsertFiles(event) {
+    processFiles(event, 'INSERT');
+}
+
+function handleUpdateFiles(event) {
+    processFiles(event, 'UPDATE');
+}
+
+function processFiles(event, mode) {
     const files = event.target.files;
     const sqlLinksContainer = document.getElementById('sql-links');
     sqlLinksContainer.innerHTML = '';
 
-    // Adiciona animação de processamento
     const processingMsg = document.createElement('p');
-    processingMsg.innerText = 'Processando arquivos...';
+    processingMsg.innerText = `Processando arquivos para ${mode}...`;
+    processingMsg.classList.add('processing');
     sqlLinksContainer.appendChild(processingMsg);
 
     for (let i = 0; i < files.length; i++) {
         const file = files[i];
         const reader = new FileReader();
 
-        reader.onload = function (event) {
+        reader.onload = function(event) {
             try {
                 const data = new Uint8Array(event.target.result);
                 const workbook = XLSX.read(data, { type: 'array' });
@@ -21,76 +29,63 @@ function handleFiles(event) {
                     const sheet = workbook.Sheets[sheetName];
                     const tableName = sheetName.replace(/\s+/g, '_');
                     const jsonData = XLSX.utils.sheet_to_json(sheet, { raw: false });
+
+                    if (jsonData.length === 0) {
+                        throw new Error('A planilha está vazia.');
+                    }
+
                     const columns = Object.keys(jsonData[0]);
 
-                    // Bloco de comandos INSERT
-                    const insertSQL = jsonData.map(row => {
-                        const values = columns.map(column => {
-                            let value = row[column];
-                            if (value === '' || typeof value === 'undefined') {
-                                return 'NULL';
-                            } else {
-                                let cleanedValue = typeof value === 'string' ? value.replace(/&nbsp;/g, '').trim() : value;
-                                cleanedValue = cleanedValue.normalize("NFD").replace(/[\u0300-\u036f]/g, ""); // Remove acentos
-                                return typeof cleanedValue === 'string' ? `'${cleanedValue.replace(/'/g, "''")}'` : `'${cleanedValue}'`;
+                    // Gera os comandos SQL com base no modo (INSERT ou UPDATE)
+                    const sqlCommands = jsonData.map(row => {
+                        if (mode === 'INSERT') {
+                            // Gera comando INSERT
+                            const values = columns.map(column => {
+                                const value = row[column];
+                                return value === undefined || value === '' ? 'NULL' : `'${value.toString().replace(/'/g, "''")}'`;
+                            }).join(', ');
+
+                            return `INSERT INTO ${tableName} (${columns.join(', ')}) VALUES (${values});`;
+                        } else if (mode === 'UPDATE') {
+                            // Gera comando UPDATE
+                            const setClauses = columns.map(column => {
+                                const value = row[column];
+                                const cleanedValue = value === undefined || value === '' ? 'NULL' : `'${value.toString().replace(/'/g, "''")}'`;
+                                return `${column} = ${cleanedValue}`;
+                            }).join(', ');
+
+                            // Identifica uma coluna-chave para a cláusula WHERE (ajuste conforme necessário)
+                            const keyColumn = columns[0]; // Aqui usamos a primeira coluna como chave
+                            const keyValue = row[keyColumn];
+                            if (keyValue === undefined || keyValue === '') {
+                                throw new Error(`A coluna-chave "${keyColumn}" está vazia para algum registro.`);
                             }
-                        }).join(', ');
-                        return `INSERT INTO ${tableName} (${columns.join(', ')}) VALUES (${values});`;
+                            const whereClause = `${keyColumn} = '${keyValue.toString().replace(/'/g, "''")}'`;
+
+                            return `UPDATE ${tableName} SET ${setClauses} WHERE ${whereClause};`;
+                        }
                     }).join('\n');
 
-                    // Bloco de comandos UPDATE
-                    const updateSQL = jsonData.map(row => {
-                        const updateStatements = columns.map(column => {
-                            let value = row[column];
-                            if (value === '' || typeof value === 'undefined') {
-                                return `${column} = NULL`;
-                            } else {
-                                let cleanedValue = typeof value === 'string' ? value.replace(/&nbsp;/g, '').trim() : value;
-                                cleanedValue = cleanedValue.normalize("NFD").replace(/[\u0300-\u036f]/g, ""); // Remove acentos
-                                return `${column} = '${cleanedValue.replace(/'/g, "''")}'`;
-                            }
-                        }).join(', ');
-
-                        // Supõe que a primeira coluna é a chave de identificação
-                        const primaryKeyColumn = columns[0];
-                        const primaryKeyValue = row[primaryKeyColumn];
-                        const cleanedPrimaryKey = primaryKeyValue
-                            ? `'${primaryKeyValue.toString().replace(/'/g, "''")}'`
-                            : 'NULL';
-
-                        return `UPDATE ${tableName} SET ${updateStatements} WHERE ${primaryKeyColumn} = ${cleanedPrimaryKey};`;
-                    }).join('\n');
-
-                    // Cria arquivos SQL separados
-                    const insertBlob = new Blob([insertSQL], { type: 'text/plain' });
-                    const insertLink = document.createElement('a');
-                    insertLink.href = window.URL.createObjectURL(insertBlob);
-                    insertLink.download = `${tableName}_insert.sql`;
-                    insertLink.innerText = `Download ${tableName}_insert.sql`;
-                    insertLink.classList.add('sql-link');
-                    sqlLinksContainer.appendChild(insertLink);
-
-                    const updateBlob = new Blob([updateSQL], { type: 'text/plain' });
-                    const updateLink = document.createElement('a');
-                    updateLink.href = window.URL.createObjectURL(updateBlob);
-                    updateLink.download = `${tableName}_update.sql`;
-                    updateLink.innerText = `Download ${tableName}_update.sql`;
-                    updateLink.classList.add('sql-link');
-                    sqlLinksContainer.appendChild(updateLink);
+                    // Cria link para download do SQL
+                    const blob = new Blob([sqlCommands], { type: 'text/plain' });
+                    const link = document.createElement('a');
+                    link.href = URL.createObjectURL(blob);
+                    link.download = `${tableName}_${mode}.sql`;
+                    link.innerText = `Download ${tableName}_${mode}.sql`;
+                    link.classList.add('sql-link');
+                    sqlLinksContainer.appendChild(link);
                 });
 
-                // Remove a animação após o processamento
+                // Remove mensagem de processamento
                 sqlLinksContainer.removeChild(processingMsg);
             } catch (error) {
-                console.error('Erro ao processar arquivo:', error);
-                // Adiciona mensagem de erro destacada
+                console.error(`Erro ao processar arquivo para ${mode}:`, error);
+                // Exibe mensagem de erro
+                sqlLinksContainer.removeChild(processingMsg);
                 const errorMsg = document.createElement('p');
-                errorMsg.innerText = `Erro ao processar ${file.name}`;
+                errorMsg.innerText = `Erro ao processar arquivo para ${mode}: ${file.name}`;
                 errorMsg.classList.add('error');
                 sqlLinksContainer.appendChild(errorMsg);
-
-                // Remove a animação em caso de erro
-                sqlLinksContainer.removeChild(processingMsg);
             }
         };
 
@@ -99,9 +94,7 @@ function handleFiles(event) {
 }
 
 function clearFiles() {
-    // Limpa a entrada de arquivo e os links SQL
-    const fileInput = document.getElementById('file-input');
-    fileInput.value = '';
-    const sqlLinksContainer = document.getElementById('sql-links');
-    sqlLinksContainer.innerHTML = '';
+    document.getElementById('insert-input').value = '';
+    document.getElementById('update-input').value = '';
+    document.getElementById('sql-links').innerHTML = '';
 }
