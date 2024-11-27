@@ -13,6 +13,7 @@ function processFiles(event, mode) {
 
     const processingMsg = document.createElement('p');
     processingMsg.innerText = `Processando arquivos para ${mode}...`;
+    processingMsg.classList.add('processing');
     sqlLinksContainer.appendChild(processingMsg);
 
     for (let i = 0; i < files.length; i++) {
@@ -31,19 +32,28 @@ function processFiles(event, mode) {
                     const columns = Object.keys(jsonData[0]);
 
                     const sqlCommands = jsonData.map(row => {
-                        const values = columns.map(column => {
-                            const value = row[column];
-                            return value === undefined || value === '' ? 'NULL' : `'${value.toString().replace(/'/g, "''")}'`;
-                        }).join(', ');
-
                         if (mode === 'INSERT') {
+                            // Gera comando INSERT
+                            const values = columns.map(column => {
+                                const value = row[column];
+                                return value === undefined || value === '' ? 'NULL' : `'${value.toString().replace(/'/g, "''")}'`;
+                            }).join(', ');
+
                             return `INSERT INTO ${tableName} (${columns.join(', ')}) VALUES (${values});`;
                         } else if (mode === 'UPDATE') {
-                            const setClauses = columns.map(column => `${column} = ${values}`).join(', ');
+                            // Gera comando UPDATE
+                            const setClauses = columns.map(column => {
+                                const value = row[column];
+                                const cleanedValue = value === undefined || value === '' ? 'NULL' : `'${value.toString().replace(/'/g, "''")}'`;
+                                return `${column} = ${cleanedValue}`;
+                            }).join(', ');
+
+                            // Substitua "/* Condição */" por sua condição específica para UPDATE
                             return `UPDATE ${tableName} SET ${setClauses} WHERE /* Condição */;`;
                         }
                     }).join('\n');
 
+                    // Cria link para download do SQL
                     const blob = new Blob([sqlCommands], { type: 'text/plain' });
                     const link = document.createElement('a');
                     link.href = URL.createObjectURL(blob);
@@ -53,10 +63,16 @@ function processFiles(event, mode) {
                     sqlLinksContainer.appendChild(link);
                 });
 
+                // Remove mensagem de processamento
                 sqlLinksContainer.removeChild(processingMsg);
             } catch (error) {
                 console.error(`Erro ao processar arquivo para ${mode}:`, error);
+                // Exibe mensagem de erro
                 sqlLinksContainer.removeChild(processingMsg);
+                const errorMsg = document.createElement('p');
+                errorMsg.innerText = `Erro ao processar arquivo para ${mode}: ${file.name}`;
+                errorMsg.classList.add('error');
+                sqlLinksContainer.appendChild(errorMsg);
             }
         };
 
